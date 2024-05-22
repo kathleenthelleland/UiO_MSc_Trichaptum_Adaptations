@@ -1,1 +1,82 @@
+#Installing Required Packages
+#First, we need to install the necessary R packages for data manipulation and visualization:
+
+install.packages("ggplot2")
+install.packages("raster")
+install.packages("tidyr")
+install.packages("sp")
+install.packages("viridis")
+install.packages("rnaturalearth")
+
+#Loading Libraries
+#Next, load the installed libraries:
+
+library(ggplot2)
+library(sp)
+library(raster)
+library(tidyr)
+library(viridis)
+library(rnaturalearth)
+
+#Acquiring and Processing Climate Data
+#We will obtain climate data from the WorldClim dataset and focus on the region covering Norway:
+
+# Download WorldClim climate data
+climate <- getData('worldclim', var = 'bio', res = 2.5)
+
+# Define the extent of the region of interest (ROI)
+roi_extent <- extent(3, 32, 57, 71)
+
+# Crop the climate data to the defined extent
+climate <- crop(climate, roi_extent)
+
+# Select a specific raster layer (here., bio1)
+raster <- climate$bio1
+
+# Retrieve the geometry for Norway
+ROI <- rnaturalearth::ne_countries(country = "norway", returnclass = "sf")
+
+# Plot the ROI for visualization
+plot(ROI)
+
+# Converting Raster Data to DataFrame
+ #Convert the raster data to a data frame for easier manipulation and visualization:
+
+# Convert raster data to data frame and remove NA values
+rasdf <- as.data.frame(raster, xy = TRUE) %>% drop_na()
+head(rasdf)
+
+5. Visualizing Climate Data
+Use ggplot2 to create a visualization of the climate data over Norway:
+
+ggplot() +
+  geom_raster(aes(x = x, y = y, fill = bio15), data = rasdf) + 
+  geom_sf(fill = "transparent", color = "transparent", data = ROI) + 
+  scale_fill_viridis_c("Coeff Variation", direction = -1) +
+  coord_sf(xlim = c(4, 15), ylim = c(57.5, 68)) +
+  theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        axis.text.y = element_blank())  # Remove y-axis labels
+
+#Customizing the Visualization
+#We can further refine the visualization by customizing breaks and labels for the color scale:
+
+# Define custom breaks and labels for the color scale
+breaks <- seq(0, 20, by = 5)
+labels <- breaks
+
+# Extract raster values within the Norway extent
+norway_extent <- extent(4, 15, 57, 68)
+norway_raster <- crop(raster, norway_extent)
+
+# Convert raster data to data frame
+norway_raster_df <- as.data.frame(norway_raster, xy = TRUE) %>% drop_na()
+
+# Plot with customized breaks and labels
+ggplot() +
+  geom_raster(aes(x = x, y = y, fill = bio1), data = norway_raster_df) + 
+  geom_sf(fill = "transparent", color = "transparent", data = ROI) + 
+  scale_fill_viridis_c(name = "Temperature", direction = -1, breaks = breaks, labels = labels) +
+  coord_sf(xlim = c(4, 15), ylim = c(57, 68)) +
+  theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        axis.text.y = element_blank())  # Remove y-axis labels
 
